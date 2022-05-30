@@ -1,0 +1,12 @@
+.DS_Store
+.idea
+
+# Python related files 
+**/__pycache__
+smoothgrad
+vanilla_gradients
+integrated_gradients
+lime_pictures
+shap_pictures
+pickled_data
+
