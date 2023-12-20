@@ -27,6 +27,42 @@ def get_max_abs_value(list_shap_values: List) -> float:
     return max_val
 
 
+def add_hatch_fill(img, full_f_name, sv_values):
+    n, m = img.shape
+    x = np.linspace(0, 1, n)
+    y = np.linspace(0, -1, m)
+
+    fig, ax = plt.subplots(figsize=(2.56, 2.56))
+    result = ax.contourf(
+        x, y, 
+        img, 
+        vmin=-1, vmax=1, 
+        cmap='seismic', 
+        extent=(0, sv_values.shape[1], sv_values.shape[0], 0),
+    )
+    print(full_f_name)
+    for hatch, lvl in zip(result.collections, result.levels):
+        print(lvl)
+        if lvl < - 0.01:
+            hatch.set_hatch('/')
+        elif lvl > 0.01:
+            hatch.set_hatch('o')
+
+    ax.set_axis_off()
+    ax.set_aspect("equal")
+    
+    fig.tight_layout(pad=0)
+    fig.savefig(full_f_name + ".pdf")
+    fig.savefig(
+        full_f_name + ".png", 
+        dpi=600, 
+        transparent=False, 
+        bbox_inches="tight",
+        pad_inches=0
+    )
+    fig.clear()
+    plt.close(fig)
+
 def shap_img(data: pd.DataFrame, imgs: np.array, func: Callable, subdir: str, fname: str, **kwargs) -> None:
     class_names = {
         0: "Rejected",
@@ -70,27 +106,38 @@ def shap_img(data: pd.DataFrame, imgs: np.array, func: Callable, subdir: str, fn
         sv_values_acc = values[0][0].sum(-1)
         sv_values_rej = values[1][0].sum(-1)
 
-        fig, ax = plt.subplots(figsize=(2.56, 2.56))
-        ax.axis("off")
-        ax.imshow(sv_values_acc / abs_val,
-                  cmap="seismic",
-                  extent=(0, sv_values_acc.shape[1], sv_values_acc.shape[0], 0),
-                  vmin=-1,
-                  vmax=1)
-        ax.set_aspect("equal")
-        fig.tight_layout(pad=0)
-        fig.savefig(f"{subdir}/{fname}_accepted_{i+1}.png")
+        add_hatch_fill(
+            sv_values_acc / abs_val,
+            f"{subdir}/{fname}_accepted_{i+1}",
+            sv_values_acc
+        )
+        add_hatch_fill(
+            sv_values_rej / abs_val,
+            f"{subdir}/{fname}_rejected_{i+1}",
+            sv_values_rej
+        )
 
-        fig, ax = plt.subplots(figsize=(2.56, 2.56))
-        ax.axis("off")
-        ax.imshow(sv_values_rej / abs_val,
-                  cmap="seismic",
-                  extent=(0, sv_values_rej.shape[1], sv_values_rej.shape[0], 0),
-                  vmin=-1,
-                  vmax=1)
-        ax.set_aspect("equal")
-        fig.tight_layout(pad=0)
-        fig.savefig(f"{subdir}/{fname}_rejected_{i+1}.png")
+#         fig, ax = plt.subplots(figsize=(2.56, 2.56))
+#         ax.axis("off")
+#         ax.imshow(sv_values_acc / abs_val,
+#                   cmap="seismic",
+#                   extent=(0, sv_values_acc.shape[1], sv_values_acc.shape[0], 0),
+#                   vmin=-1,
+#                   vmax=1)
+#         ax.set_aspect("equal")
+#         fig.tight_layout(pad=0)
+#         fig.savefig(f"{subdir}/{fname}_accepted_{i+1}.png")
+# 
+#         fig, ax = plt.subplots(figsize=(2.56, 2.56))
+#         ax.axis("off")
+#         ax.imshow(sv_values_rej / abs_val,
+#                   cmap="seismic",
+#                   extent=(0, sv_values_rej.shape[1], sv_values_rej.shape[0], 0),
+#                   vmin=-1,
+#                   vmax=1)
+#         ax.set_aspect("equal")
+#         fig.tight_layout(pad=0)
+#         fig.savefig(f"{subdir}/{fname}_rejected_{i+1}.png")
 
     df_export = pd.DataFrame(
         {

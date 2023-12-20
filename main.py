@@ -24,6 +24,9 @@ def run_experiments(gradient: YesNo, lime: YesNo, shap: YesNo) -> None:
     data = load_data()
     indices = get_person_indices(data)
     data = create_zero_attribution(data, indices)
+    
+    # Only for testing now
+    # data = data.iloc[:5]
 
     # Quadratic differences method (The labels are chosen in such a way that this will create a perfect fit) #
     differences = quadratic_differences(data, indices)

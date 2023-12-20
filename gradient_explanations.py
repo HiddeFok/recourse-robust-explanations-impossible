@@ -109,6 +109,42 @@ def ig_qd(img: np.array, x_0: np.array, indices: Tuple[np.array, np.array]) -> n
     return (img - x_0) * ig
 
 
+def add_hatch_fill(img, full_f_name):
+    n, m = img.shape
+    x = np.linspace(0, 1, n)
+    y = np.linspace(0, -1, m)
+
+    fig, ax = plt.subplots(figsize=(2.56, 2.56))
+    result = ax.contourf(
+        x, y, 
+        img, 
+        vmin=-1, vmax=1, 
+        cmap='seismic', 
+    )
+    print(full_f_name)
+    for hatch, lvl in zip(result.collections, result.levels):
+        if lvl < - 0.01:
+            hatch.set_hatch('/')
+        elif lvl > 0.01:
+            hatch.set_hatch('o')
+        print(lvl)
+    ax.set_axis_off()
+    ax.set_aspect("equal")
+
+    fig.tight_layout(pad=0)
+    fig.savefig(full_f_name + ".pdf", pad_inches=0)
+    fig.savefig(
+        full_f_name + ".png", 
+        dpi=600, 
+        transparent=False, 
+        bbox_inches="tight",
+        pad_inches=0
+    )
+    fig.clear()
+    plt.close(fig)
+    
+
+
 def save_results(data: pd.DataFrame, scores: np.array, attributions: pd.Series, subdir: str, fname: str) -> None:
     list_file_names = [0] * len(attributions)
 
@@ -125,9 +161,11 @@ def save_results(data: pd.DataFrame, scores: np.array, attributions: pd.Series, 
         # This scaling ensures that negative attributions stay negative and positive stay positive
         normalized_img = img / abs_max
 
-        full_f_name = f"{subdir}/{fname}_{i+1}.png"
+        full_f_name = f"{subdir}/{fname}_{i+1}"
         list_file_names[i] = full_f_name
-        imsave(full_f_name, normalized_img, vmin=-1, vmax=1, cmap="seismic")
+        # imsave(full_f_name, normalized_img, vmin=-1, vmax=1, cmap="seismic")
+        add_hatch_fill(normalized_img, full_f_name)
+
 
     df_export = pd.DataFrame(
         {

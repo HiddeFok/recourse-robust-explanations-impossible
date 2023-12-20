@@ -90,6 +90,41 @@ def create_subplots_figure(
     fig.savefig(fname)
 
 
+def add_hatch_fill(img, full_f_name):
+    n, m = img.shape
+    x = np.linspace(0, 1, n)
+    y = np.linspace(0, -1, m)
+
+    fig, ax = plt.subplots(figsize=(2.56, 2.56))
+    result = ax.contourf(
+        x, y, 
+        img, 
+        vmin=-1, vmax=1, 
+        cmap='seismic'
+    )
+    print(full_f_name)
+    for hatch, lvl in zip(result.collections, result.levels):
+        if lvl < - 0.01:
+            hatch.set_hatch('/')
+        elif lvl > 0.01:
+            hatch.set_hatch('o')
+        print(lvl)
+    ax.set_axis_off()
+    ax.set_aspect("equal")
+    
+    fig.tight_layout(pad=0)
+    fig.savefig(full_f_name + ".pdf")
+    fig.savefig(
+        full_f_name + ".png", 
+        dpi=600, 
+        transparent=False, 
+        bbox_inches="tight",
+        pad_inches=0
+    )
+    fig.clear()
+    plt.close(fig)
+    
+
 def create_single_image(
         exp_self: lime_image.ImageExplanation,
         exp_auto: lime_image.ImageExplanation,
@@ -101,9 +136,10 @@ def create_single_image(
     heatmap_self = np.vectorize(dict_heatmap_self_acc.get)(exp_self.segments)
     heatmap_auto = np.vectorize(dict_heatmap_auto_acc.get)(exp_auto.segments)
 
-    plt.imsave(f"{subdir}/self_{fname}", heatmap_self, cmap="seismic", vmin=-1, vmax=1)
-    plt.imsave(f"{subdir}/auto_{fname}", heatmap_auto, cmap="seismic", vmin=-1, vmax=1)
-
+    self_name = f"{subdir}/self_{fname}"
+    auto_name = f"{subdir}/auto_{fname}"
+    add_hatch_fill(heatmap_self, self_name)
+    add_hatch_fill(heatmap_auto, auto_name)
 
 def save_results(
         data: pd.DataFrame,
@@ -111,7 +147,7 @@ def save_results(
         attributions: pd.Series,
         subdir: str,
         fname: str,
-        qd_diff: Optional = None) -> None:
+        qd_diff: Optional[None] = None) -> None:
     list_file_names = [0] * len(scores)
 
     if not os.path.isdir(subdir):
@@ -123,7 +159,7 @@ def save_results(
 
         exp_self, exp_auto = attributions[i, :]
         create_subplots_figure(exp_self, exp_auto, full_f_name)
-        create_single_image(exp_self, exp_auto, subdir, f"{fname}_{i+1}.png")
+        create_single_image(exp_self, exp_auto, subdir, f"{fname}_{i+1}")
 
     if qd_diff is not None:
         df_export = pd.DataFrame(
@@ -154,6 +190,7 @@ def save_results(
 
 
 def run_lime(data, indices, threshold):
+    print(data)
     print("Working on the LIME explanations")
 
     # The 2 superpixels are the background and the person
